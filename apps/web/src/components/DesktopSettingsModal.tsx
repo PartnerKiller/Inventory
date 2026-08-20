@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Server, Printer, Monitor, CheckCircle, XCircle, RefreshCw, X, HardDrive, ShieldCheck } from 'lucide-react';
 import { api } from '../api/client';
 import { nativeBridge, PrinterInfo } from '@inventory/native-bridge';
@@ -81,7 +82,7 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
 
   if (!isOpen) return null;
 
-  return (
+  const modalElement = (
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal-card"
@@ -230,6 +231,7 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
               </select>
             </div>
           </div>
+
           {/* USB HID Keyboard Wedge Scanner */}
           <div style={{
             padding: '14px 16px',
@@ -287,4 +289,10 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalElement, document.body);
+  }
+
+  return modalElement;
 };

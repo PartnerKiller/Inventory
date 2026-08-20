@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Tag, Printer, X, Download, Copy, Layers, Check } from 'lucide-react';
 import { BarcodeLabelItem } from '@inventory/shared-types';
 import { DocumentPrinter } from '../services/DocumentPrinter';
@@ -32,8 +33,8 @@ export const BarcodeLabelModal: React.FC<BarcodeLabelModalProps> = ({
     }
   };
 
-  return (
-    <div className="modal-backdrop">
+  const modalElement = (
+    <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal-content"
         style={{
@@ -44,6 +45,7 @@ export const BarcodeLabelModal: React.FC<BarcodeLabelModalProps> = ({
           padding: 0,
           overflow: 'hidden'
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
@@ -91,47 +93,27 @@ export const BarcodeLabelModal: React.FC<BarcodeLabelModalProps> = ({
             </div>
 
             <button
-              type="button"
               className="btn btn-primary btn-sm"
               onClick={handlePrint}
               disabled={isPrinting}
             >
               <Printer size={14} />
-              <span>Print Stickers ({items.length * copies})</span>
+              {isPrinting ? 'Printing...' : `Print Stickers (${items.length * copies})`}
             </button>
-
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={onClose}
-              style={{ padding: '6px' }}
-            >
+            <button className="btn btn-outline btn-sm" onClick={onClose} style={{ padding: '4px', borderRadius: '50%' }}>
               <X size={16} />
             </button>
           </div>
         </div>
 
-        {/* Preview Sheet */}
-        <div
-          style={{
-            padding: '24px',
-            maxHeight: '65vh',
-            overflowY: 'auto',
-            backgroundColor: '#090d16',
-            display: 'flex',
-            justifyContent: 'center'
-          }}
-        >
+        {/* Body Container */}
+        <div style={{ padding: '20px', overflowY: 'auto', maxHeight: '75vh', backgroundColor: '#0f172a' }}>
           <div
             ref={sheetRef}
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-              gap: '12px',
-              width: '100%',
-              backgroundColor: '#f1f5f9',
-              padding: '16px',
-              borderRadius: '6px'
+              gap: '12px'
             }}
           >
             {items.map((item, idx) =>
@@ -139,34 +121,21 @@ export const BarcodeLabelModal: React.FC<BarcodeLabelModalProps> = ({
                 <div
                   key={`${idx}-${cIdx}`}
                   style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '4px',
-                    padding: '10px 12px',
-                    textAlign: 'center',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                    fontFamily: 'sans-serif'
+                    border: '1px dashed #334155',
+                    borderRadius: '6px',
+                    padding: '10px',
+                    backgroundColor: '#1e293b',
+                    textAlign: 'center'
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: '#0f172a',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis'
-                    }}
-                  >
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {item.title}
                   </div>
-
-                  <div style={{ fontSize: '9.5px', color: '#475569', margin: '2px 0 6px 0' }}>
-                    SKU: <b>{item.sku}</b> {item.variant ? `(${item.variant})` : ''}
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                    SKU: {item.sku}
                   </div>
 
-                  {/* Simulated Vector Barcode */}
-                  <div style={{ letterSpacing: '3px', fontFamily: 'monospace', fontSize: '15px', fontWeight: 900, color: '#000' }}>
+                  <div style={{ fontSize: '20px', fontFamily: 'monospace', letterSpacing: '4px', margin: '6px 0 2px', color: '#f8fafc' }}>
                     ||||| ||| |||| || |||||
                   </div>
 
@@ -193,4 +162,6 @@ export const BarcodeLabelModal: React.FC<BarcodeLabelModalProps> = ({
       </div>
     </div>
   );
+
+  return createPortal(modalElement, document.body);
 };

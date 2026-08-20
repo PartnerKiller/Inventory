@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, X, ArrowRight, Package, User, Building2, ShoppingCart, Send, Barcode, Warehouse, RefreshCw } from 'lucide-react';
 import { api } from '../api/client';
 import { GlobalSearchResultItem } from '@inventory/shared-types';
@@ -95,12 +96,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
     }
   };
 
-  return (
+  const modalElement = (
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(5, 10, 20, 0.75)',
-      backdropFilter: 'blur(4px)',
+      backgroundColor: 'rgba(5, 10, 20, 0.78)',
+      backdropFilter: 'blur(6px)',
       zIndex: 9999,
       display: 'flex',
       alignItems: 'flex-start',
@@ -129,54 +130,53 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search products, SKUs, barcodes, customers, suppliers, POs, SOs... (ESC to close)"
+            placeholder="Search products, SKU, barcodes, customer orders, vendors..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             style={{
               flex: 1,
-              backgroundColor: 'transparent',
+              background: 'transparent',
               border: 'none',
-              outline: 'none',
-              color: '#fff',
+              color: 'var(--text-primary)',
               fontSize: '15px',
-              fontWeight: 500,
+              outline: 'none',
             }}
           />
-          {isLoading ? (
-            <RefreshCw size={16} className="spin" color="#94a3b8" />
-          ) : query ? (
-            <button
-              onClick={() => setQuery('')}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 0 }}
-            >
-              <X size={16} />
-            </button>
-          ) : (
-            <span style={{ fontSize: '11px', color: '#64748b', border: '1px solid #334155', padding: '2px 6px', borderRadius: '4px' }}>
-              ESC
-            </span>
-          )}
+          {isLoading && <RefreshCw size={16} className="spin" color="#60a5fa" />}
+          <button
+            onClick={onClose}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '4px',
+            }}
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        {/* Results List */}
-        <div style={{ maxHeight: '380px', overflowY: 'auto', padding: '8px' }}>
-          {!query.trim() ? (
-            <div style={{ padding: '30px 20px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
-              Type a keyword, SKU, PO number, or customer name to search across the entire inventory system.
+        {/* Results Body */}
+        <div style={{ maxHeight: '420px', overflowY: 'auto', padding: '8px' }}>
+          {results.length === 0 && query.trim() && !isLoading ? (
+            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+              No matches found for "{query}" across tenant inventory.
             </div>
-          ) : results.length === 0 && !isLoading ? (
-            <div style={{ padding: '30px 20px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
-              No matches found for <strong style={{ color: '#94a3b8' }}>"{query}"</strong>
+          ) : results.length === 0 ? (
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12.5px' }}>
+              Type product names, SKU codes, PO numbers, customer or supplier accounts...
             </div>
           ) : (
-            results.map((r, idx) => {
-              const isSelected = idx === selectedIndex;
+            results.map((item, index) => {
+              const isSelected = index === selectedIndex;
               return (
                 <div
-                  key={r.identifier + r.category + idx}
-                  onClick={() => handleSelect(r)}
-                  onMouseEnter={() => setSelectedIndex(idx)}
+                  key={item.identifier + item.category + index}
+                  onClick={() => handleSelect(item)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -185,35 +185,44 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                     borderRadius: 'var(--radius-sm)',
                     backgroundColor: isSelected ? '#1e293b' : 'transparent',
                     cursor: 'pointer',
-                    transition: 'background 0.15s ease',
+                    transition: 'background-color 0.1s',
+                    border: isSelected ? '1px solid #3b82f6' : '1px solid transparent',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
-                      padding: '8px',
-                      backgroundColor: 'rgba(255,255,255,0.04)',
-                      borderRadius: 'var(--radius-sm)',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '6px',
+                      backgroundColor: '#0f172a',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}>
-                      {renderCategoryIcon(r.category)}
+                      {renderCategoryIcon(item.category)}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, fontSize: '13.5px', color: isSelected ? '#93c5fd' : '#f1f5f9' }}>
-                        {r.title}
+                      <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {item.title}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
-                        {r.subtitle}
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        {item.subtitle}
                       </div>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="badge badge-default" style={{ fontSize: '10px' }}>
-                      {r.category}
+                    <span style={{
+                      fontSize: '10.5px',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      backgroundColor: '#0f172a',
+                      color: 'var(--text-secondary)',
+                      textTransform: 'uppercase',
+                    }}>
+                      {item.category.replace('_', ' ')}
                     </span>
-                    <ArrowRight size={14} color={isSelected ? '#93c5fd' : '#475569'} />
+                    <ArrowRight size={14} color="#64748b" />
                   </div>
                 </div>
               );
@@ -240,4 +249,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalElement, document.body);
+  }
+
+  return modalElement;
 };

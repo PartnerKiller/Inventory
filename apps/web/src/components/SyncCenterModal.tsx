@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { RefreshCw, CheckCircle2, AlertTriangle, Clock, X, CloudUpload, Trash2, Wifi, WifiOff, Check } from 'lucide-react';
 import { nativeBridge, OfflineMutation } from '@inventory/native-bridge';
 import { api } from '../api/client';
@@ -106,7 +107,7 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
     await loadQueue();
   };
 
-  return (
+  const modalElement = (
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal-card"
@@ -257,4 +258,10 @@ export const SyncCenterModal: React.FC<SyncCenterModalProps> = ({ isOpen, onClos
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalElement, document.body);
+  }
+
+  return modalElement;
 };

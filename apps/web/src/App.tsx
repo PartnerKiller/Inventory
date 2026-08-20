@@ -4,6 +4,9 @@ import { Sidebar, NavPage } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { ScannerHUD } from './components/ScannerHUD';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
+import { DesktopSettingsModal } from './components/DesktopSettingsModal';
+import { SyncCenterModal } from './components/SyncCenterModal';
+import { ScannerSettingsModal } from './components/ScannerSettingsModal';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { InventoryCatalogPage } from './pages/InventoryCatalogPage';
@@ -33,6 +36,9 @@ export const App: React.FC = () => {
   const [activeWarehouse, setActiveWarehouse] = useState<string>('');
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [isDesktopSettingsOpen, setIsDesktopSettingsOpen] = useState<boolean>(false);
+  const [isSyncCenterOpen, setIsSyncCenterOpen] = useState<boolean>(false);
+  const [isScannerSettingsOpen, setIsScannerSettingsOpen] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -122,7 +128,9 @@ export const App: React.FC = () => {
           warehouses={warehouses}
           onRefresh={loadWarehouses}
           onOpenSearch={() => setIsSearchOpen(true)}
-          onShowToast={showToast}
+          onOpenDesktopSettings={() => setIsDesktopSettingsOpen(true)}
+          onOpenSyncCenter={() => setIsSyncCenterOpen(true)}
+          onOpenScannerSettings={() => setIsScannerSettingsOpen(true)}
         />
         <main className="page-body">
           <ScannerHUD />
@@ -130,10 +138,28 @@ export const App: React.FC = () => {
         </main>
       </div>
 
+      {/* Global Modals rendered at Root with createPortal */}
       <GlobalSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onNavigate={setCurrentPage}
+      />
+
+      <DesktopSettingsModal
+        isOpen={isDesktopSettingsOpen}
+        onClose={() => setIsDesktopSettingsOpen(false)}
+        onShowToast={showToast}
+      />
+
+      <SyncCenterModal
+        isOpen={isSyncCenterOpen}
+        onClose={() => setIsSyncCenterOpen(false)}
+        onShowToast={showToast}
+      />
+
+      <ScannerSettingsModal
+        isOpen={isScannerSettingsOpen}
+        onClose={() => setIsScannerSettingsOpen(false)}
       />
 
       {/* Non-blocking Toast Container */}

@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Warehouse, RefreshCw, Monitor, Wifi, WifiOff, CloudUpload, Barcode } from 'lucide-react';
+import { Search, Warehouse, RefreshCw, Wifi, WifiOff, CloudUpload, Barcode } from 'lucide-react';
 import { api } from '../api/client';
 import { nativeBridge } from '@inventory/native-bridge';
-import { DesktopSettingsModal } from './DesktopSettingsModal';
-import { SyncCenterModal } from './SyncCenterModal';
-import { ScannerSettingsModal } from './ScannerSettingsModal';
 
 interface NavbarProps {
   activeWarehouse: string;
@@ -12,7 +9,9 @@ interface NavbarProps {
   warehouses: Array<{ id: string; code: string; name: string }>;
   onRefresh: () => void;
   onOpenSearch?: () => void;
-  onShowToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
+  onOpenDesktopSettings?: () => void;
+  onOpenSyncCenter?: () => void;
+  onOpenScannerSettings?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -21,12 +20,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   warehouses,
   onRefresh,
   onOpenSearch,
-  onShowToast,
+  onOpenDesktopSettings,
+  onOpenSyncCenter,
+  onOpenScannerSettings,
 }) => {
   const [connectionStatus, setConnectionStatus] = useState<'CONNECTED' | 'DISCONNECTED' | 'ERROR' | 'SYNCING'>('CONNECTED');
-  const [isDesktopSettingsOpen, setIsDesktopSettingsOpen] = useState<boolean>(false);
-  const [isSyncCenterOpen, setIsSyncCenterOpen] = useState<boolean>(false);
-  const [isScannerSettingsOpen, setIsScannerSettingsOpen] = useState<boolean>(false);
   const [pendingCount, setPendingCount] = useState<number>(0);
 
   const checkPendingQueue = async () => {
@@ -110,7 +108,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Dedicated Scanner Settings Trigger */}
         <button
           className="btn btn-secondary btn-sm"
-          onClick={() => setIsScannerSettingsOpen(true)}
+          onClick={onOpenScannerSettings}
           style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           title="USB HID Barcode Scanner Settings"
         >
@@ -121,7 +119,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Sync Center Trigger */}
         <button
           className="btn btn-secondary btn-sm"
-          onClick={() => setIsSyncCenterOpen(true)}
+          onClick={onOpenSyncCenter}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -140,7 +138,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Compact Backend Status Control */}
         <button
           className="btn btn-secondary btn-sm"
-          onClick={() => setIsDesktopSettingsOpen(true)}
+          onClick={onOpenDesktopSettings}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -162,23 +160,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </button>
       </div>
-
-      <DesktopSettingsModal
-        isOpen={isDesktopSettingsOpen}
-        onClose={() => setIsDesktopSettingsOpen(false)}
-        onShowToast={onShowToast}
-      />
-
-      <SyncCenterModal
-        isOpen={isSyncCenterOpen}
-        onClose={() => setIsSyncCenterOpen(false)}
-        onShowToast={onShowToast}
-      />
-
-      <ScannerSettingsModal
-        isOpen={isScannerSettingsOpen}
-        onClose={() => setIsScannerSettingsOpen(false)}
-      />
     </header>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Printer,
   Download,
@@ -86,8 +87,8 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
     }
   };
 
-  return (
-    <div className="modal-backdrop">
+  const modalElement = (
+    <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal-content"
         style={{
@@ -101,6 +102,7 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           backgroundColor: '#0f172a',
           borderColor: 'var(--border-subtle)'
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Header Toolbar */}
         <div
@@ -130,56 +132,49 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             <div style={{ display: 'flex', background: '#0f172a', borderRadius: '6px', padding: '2px', border: '1px solid var(--border-subtle)' }}>
               <button
                 type="button"
-                className={`btn btn-sm ${layout === 'A4' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '3px 10px', fontSize: '12px' }}
+                className={`btn btn-sm ${layout === 'A4' ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setLayout('A4')}
+                style={{ padding: '3px 10px', fontSize: '12px', border: 'none' }}
               >
                 A4 Standard
               </button>
               <button
                 type="button"
-                className={`btn btn-sm ${layout === 'THERMAL' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ padding: '3px 10px', fontSize: '12px' }}
+                className={`btn btn-sm ${layout === 'THERMAL' ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setLayout('THERMAL')}
+                style={{ padding: '3px 10px', fontSize: '12px', border: 'none' }}
               >
                 Thermal (80mm)
               </button>
             </div>
 
             <button
-              type="button"
               className="btn btn-secondary btn-sm"
               onClick={handleDownloadPdf}
-              disabled={loading || isDownloading}
-              title="Download Server-Generated PDF"
+              disabled={isDownloading || !payload}
+              title="Download PDF"
             >
-              {isDownloading ? <Loader2 size={14} className="spin" /> : <Download size={14} />}
+              <Download size={14} />
               <span>Download PDF</span>
             </button>
 
             <button
-              type="button"
               className="btn btn-primary btn-sm"
               onClick={handlePrint}
-              disabled={loading || isPrinting}
-              title="Send to Printer"
+              disabled={isPrinting || !payload}
+              title="Print Document"
             >
-              {isPrinting ? <Loader2 size={14} className="spin" /> : <Printer size={14} />}
+              <Printer size={14} />
               <span>Print</span>
             </button>
 
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={onClose}
-              style={{ padding: '6px' }}
-            >
+            <button className="btn btn-outline btn-sm" onClick={onClose} style={{ padding: '4px', borderRadius: '50%' }}>
               <X size={16} />
             </button>
           </div>
         </div>
 
-        {/* Document Render Body */}
+        {/* Scrollable Preview Body */}
         <div
           style={{
             flex: 1,
@@ -191,16 +186,16 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
           }}
         >
           {loading && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-              <Loader2 size={32} className="spin" style={{ color: '#3b82f6', marginBottom: '12px' }} />
-              <div>Assembling authoritative document preview...</div>
+            <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <Loader2 size={32} className="spin" style={{ margin: '0 auto 12px' }} />
+              <div>Generating high-fidelity document payload...</div>
             </div>
           )}
 
           {error && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '20px', backgroundColor: '#450a0a', border: '1px solid #7f1d1d', borderRadius: '8px', color: '#fca5a5' }}>
-              <AlertCircle size={20} />
-              <span>{error}</span>
+            <div style={{ padding: '40px', textAlign: 'center', color: '#f87171' }}>
+              <AlertCircle size={32} style={{ margin: '0 auto 12px' }} />
+              <div>{error}</div>
             </div>
           )}
 
@@ -208,40 +203,36 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
             <div
               ref={previewRef}
               style={{
-                width: layout === 'THERMAL' ? '320px' : '780px',
-                minHeight: layout === 'THERMAL' ? 'auto' : '980px',
+                width: layout === 'THERMAL' ? '300px' : '680px',
+                minHeight: layout === 'THERMAL' ? 'auto' : '800px',
                 backgroundColor: '#ffffff',
                 color: '#0f172a',
                 padding: layout === 'THERMAL' ? '16px' : '36px',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
-                borderRadius: '4px',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                fontFamily: 'Arial, sans-serif',
                 fontSize: layout === 'THERMAL' ? '11px' : '13px',
-                lineHeight: 1.4
+                borderRadius: '4px',
+                transition: 'width 0.2s'
               }}
             >
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #0f172a', paddingBottom: '16px', marginBottom: '16px' }}>
+              {/* Header Details */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #0f172a', paddingBottom: '16px', marginBottom: '16px' }}>
                 <div>
-                  <div style={{ fontSize: layout === 'THERMAL' ? '16px' : '22px', fontWeight: 800, color: '#1e3a8a', letterSpacing: '-0.5px' }}>
+                  <h1 style={{ fontSize: layout === 'THERMAL' ? '16px' : '22px', fontWeight: 900, margin: 0, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
                     {payload.header.company_name}
-                  </div>
-                  {payload.header.company_address && (
-                    <div style={{ color: '#475569', fontSize: layout === 'THERMAL' ? '10px' : '12px', marginTop: '2px' }}>
-                      {payload.header.company_address}
+                  </h1>
+                  {payload.facility && (
+                    <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>
+                      {payload.facility.warehouse_name} ({payload.facility.warehouse_code})
                     </div>
                   )}
-                  <div style={{ color: '#64748b', fontSize: layout === 'THERMAL' ? '10px' : '11px', marginTop: '2px' }}>
-                    {payload.header.company_email} {payload.header.company_phone ? `| ${payload.header.company_phone}` : ''}
-                  </div>
                 </div>
-
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: layout === 'THERMAL' ? '13px' : '18px', fontWeight: 800, color: '#0f172a' }}>
+                  <div style={{ fontSize: layout === 'THERMAL' ? '13px' : '16px', fontWeight: 800, color: '#2563eb' }}>
                     {payload.header.document_title}
                   </div>
-                  <div style={{ fontSize: layout === 'THERMAL' ? '11px' : '13px', fontWeight: 700, color: '#2563eb', marginTop: '2px' }}>
-                    {payload.header.document_number}
+                  <div style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'monospace', marginTop: '2px' }}>
+                    #{payload.header.document_number}
                   </div>
                   <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
                     Date: {payload.header.date_formatted}
@@ -469,4 +460,10 @@ export const DocumentPreviewModal: React.FC<DocumentPreviewModalProps> = ({
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalElement, document.body);
+  }
+
+  return modalElement;
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Barcode, CheckCircle, X, RefreshCw } from 'lucide-react';
 import { nativeBridge } from '@inventory/native-bridge';
 
@@ -45,7 +46,7 @@ export const ScannerSettingsModal: React.FC<ScannerSettingsModalProps> = ({ isOp
 
   if (!isOpen) return null;
 
-  return (
+  const modalElement = (
     <div className="modal-backdrop" onClick={onClose}>
       <div
         className="modal-card"
@@ -181,4 +182,10 @@ export const ScannerSettingsModal: React.FC<ScannerSettingsModalProps> = ({ isOp
       </div>
     </div>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalElement, document.body);
+  }
+
+  return modalElement;
 };
