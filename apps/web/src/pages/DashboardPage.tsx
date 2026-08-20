@@ -10,23 +10,18 @@ import { NavPage } from '../components/Sidebar';
 
 interface DashboardPageProps {
   onNavigate: (page: NavPage) => void;
+  activeWarehouse?: string;
 }
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, activeWarehouse }) => {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [warehouses, setWarehouses] = useState<WarehouseType[]>([]);
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
   const loadData = async (whId?: string) => {
     try {
       setIsLoading(true);
-      const [data, whs] = await Promise.all([
-        api.getDashboardMetrics(whId || undefined),
-        api.getWarehouses(),
-      ]);
+      const data = await api.getDashboardMetrics(whId || undefined);
       setMetrics(data);
-      setWarehouses(whs);
     } catch (err) {
       console.error('Failed to load dashboard metrics:', err);
     } finally {
@@ -35,8 +30,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
   };
 
   useEffect(() => {
-    loadData(selectedWarehouseId);
-  }, [selectedWarehouseId]);
+    loadData(activeWarehouse);
+  }, [activeWarehouse]);
 
   if (isLoading && !metrics) {
     return (
@@ -52,7 +47,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
             Operational Command Center
           </h1>
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '2px' }}>
@@ -61,25 +56,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate }) => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {/* Facility Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Warehouse size={16} color="#94a3b8" />
-            <select
-              className="form-control"
-              style={{ width: '180px', height: '34px', fontSize: '12.5px' }}
-              value={selectedWarehouseId}
-              onChange={(e) => setSelectedWarehouseId(e.target.value)}
-            >
-              <option value="">All Facilities</option>
-              {warehouses.map(w => (
-                <option key={w.id} value={w.id}>{w.code} - {w.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <button className="btn btn-secondary btn-sm" onClick={() => loadData(selectedWarehouseId)}>
-            <RefreshCw size={13} className={isLoading ? 'spin' : ''} /> Refresh
-          </button>
           <button className="btn btn-primary btn-sm" onClick={() => onNavigate('sales')}>
             <Send size={14} /> Fulfill Orders
           </button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './context/AuthContext';
 import { Sidebar, NavPage } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
@@ -19,6 +19,13 @@ import { SettingsPage } from './pages/SettingsPage';
 import { OperationsMonitoringPage } from './pages/OperationsMonitoringPage';
 import { api } from './api/client';
 import { Warehouse } from '@inventory/shared-types';
+import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
+
+interface ToastMessage {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
 
 export const App: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -26,6 +33,15 @@ export const App: React.FC = () => {
   const [activeWarehouse, setActiveWarehouse] = useState<string>('');
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3200);
+  }, []);
 
   const loadWarehouses = async () => {
     if (!isAuthenticated) return;
@@ -68,7 +84,7 @@ export const App: React.FC = () => {
   const renderContent = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage onNavigate={setCurrentPage} />;
+        return <DashboardPage onNavigate={setCurrentPage} activeWarehouse={activeWarehouse} />;
       case 'items':
         return <InventoryCatalogPage />;
       case 'ledger':
@@ -92,7 +108,7 @@ export const App: React.FC = () => {
       case 'operations':
         return <OperationsMonitoringPage />;
       default:
-        return <DashboardPage onNavigate={setCurrentPage} />;
+        return <DashboardPage onNavigate={setCurrentPage} activeWarehouse={activeWarehouse} />;
     }
   };
 
@@ -106,6 +122,7 @@ export const App: React.FC = () => {
           warehouses={warehouses}
           onRefresh={loadWarehouses}
           onOpenSearch={() => setIsSearchOpen(true)}
+          onShowToast={showToast}
         />
         <main className="page-body">
           <ScannerHUD />
@@ -118,6 +135,20 @@ export const App: React.FC = () => {
         onClose={() => setIsSearchOpen(false)}
         onNavigate={setCurrentPage}
       />
+
+      {/* Non-blocking Toast Container */}
+      {toasts.length > 0 && (
+        <div className="toast-container">
+          {toasts.map(t => (
+            <div key={t.id} className={`toast-notification ${t.type}`}>
+              {t.type === 'success' && <CheckCircle2 size={16} color="#34d399" />}
+              {t.type === 'error' && <AlertCircle size={16} color="#f87171" />}
+              {t.type === 'info' && <Info size={16} color="#38bdf8" />}
+              <span>{t.message}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

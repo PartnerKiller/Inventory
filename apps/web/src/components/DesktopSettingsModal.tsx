@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Server, Printer, Barcode, Monitor, CheckCircle, XCircle, RefreshCw, X, HardDrive, ShieldCheck } from 'lucide-react';
+import { Server, Printer, Monitor, CheckCircle, XCircle, RefreshCw, X, HardDrive, ShieldCheck } from 'lucide-react';
 import { api } from '../api/client';
 import { nativeBridge, PrinterInfo } from '@inventory/native-bridge';
 import { PrintLayout, AppMetadata } from '@inventory/shared-types';
@@ -7,9 +7,10 @@ import { PrintLayout, AppMetadata } from '@inventory/shared-types';
 interface DesktopSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onShowToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
 }
 
-export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOpen, onClose }) => {
+export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOpen, onClose, onShowToast }) => {
   const [apiUrl, setApiUrl] = useState<string>(api.getBaseUrl());
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const [connectionResult, setConnectionResult] = useState<{ ok: boolean; status: string; latencyMs: number; message?: string } | null>(null);
@@ -17,7 +18,6 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
   const [preferredPrinter, setPreferredPrinter] = useState<string>(localStorage.getItem('aurastock_pref_printer') || '');
   const [defaultLayout, setDefaultLayout] = useState<PrintLayout>((localStorage.getItem('aurastock_pref_layout') as PrintLayout) || 'A4');
   const [scannerThreshold, setScannerThreshold] = useState<number>(nativeBridge.getScannerThreshold());
-  const [scannedTestLog, setScannedTestLog] = useState<string[]>([]);
   const [appInfo, setAppInfo] = useState<AppMetadata>(nativeBridge.getAppInfo());
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
 
@@ -27,18 +27,9 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
       setScannerThreshold(nativeBridge.getScannerThreshold());
       setAppInfo(nativeBridge.getAppInfo());
       loadPrinters();
+      setSavedSuccess(false);
+      setConnectionResult(null);
     }
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const unsubscribe = nativeBridge.onBarcode((event) => {
-      const entry = `[${new Date(event.timestamp).toLocaleTimeString()}] ${event.barcode} (${event.source}${event.symbology ? ` - ${event.symbology}` : ''})`;
-      setScannedTestLog(prev => [entry, ...prev.slice(0, 4)]);
-    });
-
-    return () => unsubscribe();
   }, [isOpen]);
 
   const loadPrinters = async () => {
@@ -79,34 +70,49 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
     localStorage.setItem('aurastock_pref_layout', defaultLayout);
     localStorage.setItem('aurastock_scanner_threshold', String(scannerThreshold));
     setSavedSuccess(true);
+    if (onShowToast) {
+      onShowToast('✓ Desktop settings saved and applied', 'success');
+    }
     setTimeout(() => {
       setSavedSuccess(false);
       onClose();
-    }, 1000);
+    }, 600);
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal-card" style={{ maxWidth: '750px', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+      <div
+        className="modal-card"
+        style={{
+          maxWidth: '620px',
+          width: '100%',
+          backgroundColor: '#0f172a',
+          border: '1px solid #334155',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.85)'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Monitor size={22} color="var(--primary)" />
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>Windows Desktop & Connectivity Settings</h3>
+            <Monitor size={20} color="#3b82f6" />
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              Windows Desktop & Connectivity Settings
+            </h3>
           </div>
-          <button className="btn btn-icon" onClick={onClose}>
-            <X size={18} />
+          <button className="btn btn-outline btn-sm" onClick={onClose} style={{ padding: '4px', borderRadius: '50%' }}>
+            <X size={15} />
           </button>
         </div>
 
-        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '18px', padding: '20px 24px' }}>
           {/* Runtime & System Metadata */}
           <div style={{
             padding: '12px 16px',
-            backgroundColor: 'var(--bg-card-alt)',
-            borderRadius: '8px',
-            border: '1px solid var(--border-card)',
+            backgroundColor: '#131d36',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid #283550',
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '12px',
@@ -114,30 +120,28 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
           }}>
             <div>
               <span style={{ color: 'var(--text-muted)', display: 'block' }}>Application</span>
-              <strong style={{ color: 'var(--text-main)' }}>{appInfo.name}</strong>
+              <strong style={{ color: 'var(--text-primary)' }}>{appInfo.name}</strong>
             </div>
             <div>
-              <span style={{ color: 'var(--text-muted)', display: 'block' }}>Client Version</span>
-              <strong style={{ color: 'var(--text-main)' }}>v{appInfo.version}</strong>
+              <span style={{ color: 'var(--text-muted)', display: 'block' }}>Version</span>
+              <strong style={{ color: 'var(--text-primary)' }}>v{appInfo.version}</strong>
             </div>
             <div>
-              <span style={{ color: 'var(--text-muted)', display: 'block' }}>Runtime Host</span>
-              <strong style={{ color: appInfo.isDesktop ? '#10b981' : '#38bdf8' }}>
-                {appInfo.platform}
-              </strong>
+              <span style={{ color: 'var(--text-muted)', display: 'block' }}>Platform</span>
+              <strong style={{ color: '#10b981' }}>{appInfo.platform}</strong>
             </div>
             <div>
-              <span style={{ color: 'var(--text-muted)', display: 'block' }}>Security Vault</span>
+              <span style={{ color: 'var(--text-muted)', display: 'block' }}>Vault</span>
               <strong style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <ShieldCheck size={14} /> Active
+                <ShieldCheck size={13} /> Active
               </strong>
             </div>
           </div>
 
           {/* Backend API Server Connectivity */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Server size={16} color="var(--primary)" /> FastAPI Backend API Server URL
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Server size={15} color="#3b82f6" /> Central AuraStock Backend API Server URL
             </label>
             <div style={{ display: 'flex', gap: '10px' }}>
               <input
@@ -153,15 +157,15 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
                 className="btn btn-secondary btn-sm"
                 onClick={() => testCurrentConnection(apiUrl)}
                 disabled={isTesting}
-                style={{ minWidth: '140px' }}
+                style={{ minWidth: '130px' }}
               >
                 {isTesting ? (
                   <>
-                    <RefreshCw size={14} className="spin" /> Checking...
+                    <RefreshCw size={13} className="spin" /> Checking...
                   </>
                 ) : (
                   <>
-                    <RefreshCw size={14} /> Test Connection
+                    <RefreshCw size={13} /> Test Connection
                   </>
                 )}
               </button>
@@ -171,8 +175,8 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
             {connectionResult && (
               <div style={{
                 padding: '8px 12px',
-                borderRadius: '6px',
-                backgroundColor: connectionResult.ok ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: connectionResult.ok ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
                 border: `1px solid ${connectionResult.ok ? '#10b981' : '#ef4444'}`,
                 display: 'flex',
                 alignItems: 'center',
@@ -180,76 +184,70 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
                 fontSize: '12px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  {connectionResult.ok ? <CheckCircle size={16} color="#10b981" /> : <XCircle size={16} color="#ef4444" />}
+                  {connectionResult.ok ? <CheckCircle size={15} color="#10b981" /> : <XCircle size={15} color="#ef4444" />}
                   <span style={{ color: connectionResult.ok ? '#10b981' : '#ef4444', fontWeight: 600 }}>
-                    {connectionResult.ok ? `Backend Operational (${connectionResult.latencyMs}ms latency)` : `Connection Failed: ${connectionResult.message}`}
+                    {connectionResult.ok ? `Backend Operational (${connectionResult.latencyMs}ms)` : `Connection Failed: ${connectionResult.message}`}
                   </span>
                 </div>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Health Check: /health</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Probe: /health</span>
               </div>
             )}
           </div>
 
           {/* Document & Printer Preferences */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Printer size={16} color="var(--primary)" /> Preferred System Printer
+              <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Printer size={15} color="#3b82f6" /> System Printer
               </label>
               <select
                 className="form-control"
                 value={preferredPrinter}
                 onChange={e => setPreferredPrinter(e.target.value)}
+                style={{ fontSize: '13px' }}
               >
                 {printers.map((p, idx) => (
                   <option key={idx} value={p.name}>
-                    {p.name} {p.isDefault ? '(Default)' : ''} [{p.type}]
+                    {p.name} {p.isDefault ? '(Default)' : ''}
                   </option>
                 ))}
               </select>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                Enumerated via native Windows Spooler abstraction
-              </span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <HardDrive size={16} color="var(--primary)" /> Default Document Format
+              <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <HardDrive size={15} color="#3b82f6" /> Default Document Format
               </label>
               <select
                 className="form-control"
                 value={defaultLayout}
                 onChange={e => setDefaultLayout(e.target.value as PrintLayout)}
+                style={{ fontSize: '13px' }}
               >
-                <option value="A4">A4 Full Sheet (Commercial Forms)</option>
-                <option value="THERMAL">80mm Thermal Receipt (POS / Logistics)</option>
+                <option value="A4">A4 Full Sheet</option>
+                <option value="THERMAL">80mm Thermal Receipt</option>
                 <option value="LABEL">Multi-Column Sticker Labels</option>
               </select>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                Pre-selected layout when opening Document Preview
-              </span>
             </div>
           </div>
-
-          {/* Barcode Scanner (USB HID Keyboard Wedge) */}
+          {/* USB HID Keyboard Wedge Scanner */}
           <div style={{
-            padding: '14px',
-            backgroundColor: 'var(--bg-card-alt)',
-            borderRadius: '8px',
-            border: '1px solid var(--border-card)',
+            padding: '14px 16px',
+            backgroundColor: '#131d36',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid #283550',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px'
+            gap: '10px'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-                <Barcode size={16} color="var(--primary)" /> USB HID Keyboard Wedge Scanner
+              <label style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                <Monitor size={15} color="#3b82f6" /> USB HID Keyboard Wedge Scanner
               </label>
-              <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 600 }}>● Ready for Scans</span>
+              <span style={{ fontSize: '11.5px', color: '#34d399', fontWeight: 600 }}>● Ready for Scans</span>
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <label style={{ fontSize: '12px', color: 'var(--text-muted)', minWidth: '150px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', minWidth: '160px' }}>
                 Inter-keystroke Threshold:
               </label>
               <input
@@ -258,53 +256,28 @@ export const DesktopSettingsModal: React.FC<DesktopSettingsModalProps> = ({ isOp
                 max={250}
                 step={5}
                 className="form-control"
-                style={{ width: '90px' }}
+                style={{ width: '90px', fontSize: '12.5px', padding: '4px 8px' }}
                 value={scannerThreshold}
                 onChange={e => setScannerThreshold(Number(e.target.value))}
               />
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>ms (Scanners fire characters &lt;50ms apart)</span>
-            </div>
-
-            {/* Live Scan Test Area */}
-            <div style={{ marginTop: '4px' }}>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Scan any barcode here to verify USB HID scanner reception..."
-                style={{ fontSize: '12px' }}
-              />
-              {scannedTestLog.length > 0 && (
-                <div style={{
-                  marginTop: '8px',
-                  padding: '8px',
-                  backgroundColor: 'var(--bg-app)',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontFamily: 'monospace',
-                  color: '#38bdf8'
-                }}>
-                  {scannedTestLog.map((log, i) => (
-                    <div key={i}>{log}</div>
-                  ))}
-                </div>
-              )}
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>ms</span>
             </div>
           </div>
         </div>
 
-        <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={onClose}>
             Cancel
           </button>
           <button
             type="button"
-            className="btn btn-primary"
+            className="btn btn-primary btn-sm"
             onClick={handleSaveSettings}
-            style={{ minWidth: '130px' }}
+            style={{ minWidth: '110px' }}
           >
             {savedSuccess ? (
               <>
-                <CheckCircle size={16} /> Saved!
+                <CheckCircle size={15} /> Saved!
               </>
             ) : (
               'Save & Apply'

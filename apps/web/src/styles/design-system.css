@@ -46,6 +46,16 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+
+  /* Documented Application Z-Index Hierarchy */
+  --z-base: 1;
+  --z-sticky: 10;
+  --z-navbar: 40;
+  --z-sidebar: 50;
+  --z-dropdown: 500;
+  --z-modal-backdrop: 9000;
+  --z-modal-card: 9001;
+  --z-toast: 10000;
 }
 
 * {
@@ -68,6 +78,8 @@ body {
   display: flex;
   min-height: 100vh;
   width: 100vw;
+  position: relative;
+  background-color: var(--bg-app);
 }
 
 .main-content {
@@ -76,6 +88,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
   background-color: var(--bg-app);
 }
 
@@ -98,7 +111,7 @@ body {
   border-right: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  z-index: 100;
+  z-index: var(--z-sidebar);
 }
 
 .sidebar-header {
@@ -433,55 +446,122 @@ body {
 .badge-info    { background-color: var(--info-bg); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); }
 .badge-default { background-color: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border-card); }
 
-/* Modals & Drawers */
+/* Modals, Dialogs & Drawers */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 200;
+  z-index: var(--z-modal-backdrop);
   padding: 20px;
+  overflow-y: auto;
 }
 
-.modal-content {
-  background-color: var(--bg-sidebar);
-  border: 1px solid var(--border-card);
+.modal-content,
+.modal-card,
+.modal-container {
+  position: relative;
+  background-color: #0f172a;
+  border: 1px solid #334155;
   border-radius: var(--radius-lg);
   max-width: 600px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-  animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  z-index: var(--z-modal-card);
+  animation: modalPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
 @keyframes modalPop {
-  0% { opacity: 0; transform: scale(0.96); }
-  100% { opacity: 1; transform: scale(1); }
+  0% { opacity: 0; transform: scale(0.96) translateY(6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .modal-header {
-  padding: 18px 24px;
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border-card);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background-color: #131d36;
+  flex-shrink: 0;
 }
 
 .modal-body {
-  padding: 24px;
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+  background-color: #0f172a;
 }
 
 .modal-footer {
-  padding: 16px 24px;
-  border-top: 1px solid var(--border-subtle);
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-card);
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  background-color: rgba(15, 23, 42, 0.4);
+  background-color: #0b1120;
+  flex-shrink: 0;
+}
+
+/* Toast Notifications */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: var(--z-toast);
+  pointer-events: none;
+}
+
+.toast-notification {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: toastSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 420px;
+}
+
+.toast-notification.success {
+  background-color: #064e3b;
+  border-color: #059669;
+  color: #ecfdf5;
+}
+
+.toast-notification.error {
+  background-color: #7f1d1d;
+  border-color: #dc2626;
+  color: #fef2f2;
+}
+
+.toast-notification.info {
+  background-color: #0c4a6e;
+  border-color: #0284c7;
+  color: #f0f9ff;
+}
+
+@keyframes toastSlide {
+  0% { opacity: 0; transform: translateY(-12px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* Form Controls */
