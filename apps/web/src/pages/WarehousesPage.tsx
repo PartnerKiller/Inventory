@@ -6,8 +6,10 @@ import {
 import { api } from '../api/client';
 import { Warehouse, LocationBin } from '@inventory/shared-types';
 import { Modal } from '../components/Modal';
+import { useWarehouse } from '../context/WarehouseContext';
 
 export const WarehousesPage: React.FC = () => {
+  const { refreshWarehouses } = useWarehouse();
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -108,6 +110,7 @@ export const WarehousesPage: React.FC = () => {
       });
       setIsCreateModalOpen(false);
       loadWarehouses();
+      refreshWarehouses();
     } catch (err: any) {
       alert(`Warehouse creation failed: ${err.message}`);
     }
@@ -141,6 +144,7 @@ export const WarehousesPage: React.FC = () => {
       });
       setIsEditModalOpen(false);
       loadWarehouses();
+      refreshWarehouses();
     } catch (err: any) {
       alert(`Update failed: ${err.message}`);
     }
@@ -159,6 +163,7 @@ export const WarehousesPage: React.FC = () => {
       setIsDeleteModalOpen(false);
       setWarehouseToDelete(null);
       loadWarehouses();
+      refreshWarehouses();
     } catch (err: any) {
       alert(`Archive rejected: ${err.message}`);
     }

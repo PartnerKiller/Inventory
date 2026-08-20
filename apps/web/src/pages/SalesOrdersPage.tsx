@@ -13,8 +13,10 @@ import {
 } from '@inventory/shared-types';
 import { Modal } from '../components/Modal';
 import { DocumentPreviewModal } from '../components/DocumentPreviewModal';
+import { useWarehouse } from '../context/WarehouseContext';
 
 export const SalesOrdersPage: React.FC = () => {
+  const { activeWarehouseId } = useWarehouse();
   const [activeTab, setActiveTab] = useState<'orders' | 'customers'>('orders');
 
   // Sales Orders State
@@ -25,7 +27,7 @@ export const SalesOrdersPage: React.FC = () => {
   const [orderPageSize, setOrderPageSize] = useState<number>(15);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [customerFilter, setCustomerFilter] = useState<string>('');
-  const [warehouseFilter, setWarehouseFilter] = useState<string>('');
+  const [warehouseFilter, setWarehouseFilter] = useState<string>(activeWarehouseId);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Customers State
@@ -171,6 +173,11 @@ export const SalesOrdersPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    setWarehouseFilter(activeWarehouseId);
+    setOrderPage(1);
+  }, [activeWarehouseId]);
+
+  useEffect(() => {
     if (activeTab === 'orders') {
       loadSalesOrders();
     } else {
@@ -236,7 +243,7 @@ export const SalesOrdersPage: React.FC = () => {
   const openCreateSoModal = () => {
     setEditingSo(null);
     setFormCustomerId(customers[0]?.id || '');
-    setFormWarehouseId(warehouses[0]?.id || '');
+    setFormWarehouseId(activeWarehouseId || warehouses[0]?.id || '');
     setFormNotes('');
 
     const firstVariant = items[0]?.variants?.[0];

@@ -18,6 +18,8 @@ inventory_dev.db
 *.db
 *.sqlite
 *.sqlite3
+backups/
+*.db.gz
 
 # Build outputs
 dist/

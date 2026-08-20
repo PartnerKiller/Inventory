@@ -8,12 +8,16 @@ import { api } from '../api/client';
 import { DashboardMetrics, Warehouse as WarehouseType } from '@inventory/shared-types';
 import { NavPage } from '../components/Sidebar';
 
+import { useWarehouse } from '../context/WarehouseContext';
+
 interface DashboardPageProps {
   onNavigate: (page: NavPage) => void;
   activeWarehouse?: string;
 }
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, activeWarehouse }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onNavigate, activeWarehouse: propActiveWarehouse }) => {
+  const { activeWarehouseId: contextWarehouseId } = useWarehouse();
+  const activeWarehouse = propActiveWarehouse !== undefined ? propActiveWarehouse : contextWarehouseId;
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

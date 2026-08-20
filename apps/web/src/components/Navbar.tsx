@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Warehouse, RefreshCw, Wifi, WifiOff, CloudUpload, Barcode } from 'lucide-react';
+import { Search, Warehouse, RefreshCw, CloudUpload, Barcode } from 'lucide-react';
 import { api } from '../api/client';
 import { nativeBridge } from '@inventory/native-bridge';
+import { useWarehouse } from '../context/WarehouseContext';
 
 interface NavbarProps {
-  activeWarehouse: string;
-  onWarehouseChange: (whId: string) => void;
-  warehouses: Array<{ id: string; code: string; name: string }>;
-  onRefresh: () => void;
   onOpenSearch?: () => void;
   onOpenDesktopSettings?: () => void;
   onOpenSyncCenter?: () => void;
@@ -15,15 +12,12 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  activeWarehouse,
-  onWarehouseChange,
-  warehouses,
-  onRefresh,
   onOpenSearch,
   onOpenDesktopSettings,
   onOpenSyncCenter,
   onOpenScannerSettings,
 }) => {
+  const { warehouses, activeWarehouseId, setActiveWarehouseId, refreshWarehouses } = useWarehouse();
   const [connectionStatus, setConnectionStatus] = useState<'CONNECTED' | 'DISCONNECTED' | 'ERROR' | 'SYNCING'>('CONNECTED');
   const [pendingCount, setPendingCount] = useState<number>(0);
 
@@ -88,8 +82,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Warehouse size={15} color="#94a3b8" />
           <select
             className="form-control"
-            value={activeWarehouse}
-            onChange={(e) => onWarehouseChange(e.target.value)}
+            value={activeWarehouseId}
+            onChange={(e) => setActiveWarehouseId(e.target.value)}
             style={{ width: '190px', padding: '5px 10px', fontSize: '12.5px', backgroundColor: 'var(--bg-card)' }}
           >
             <option value="">All Warehouses</option>
@@ -101,7 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </select>
         </div>
 
-        <button className="btn btn-secondary btn-sm" onClick={onRefresh} title="Refresh catalog data">
+        <button className="btn btn-secondary btn-sm" onClick={refreshWarehouses} title="Refresh catalog data">
           <RefreshCw size={13} /> Refresh
         </button>
 

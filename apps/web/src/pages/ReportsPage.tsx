@@ -9,8 +9,10 @@ import {
   InventoryReportResponse, PurchasingReportResponse, SalesReportResponse,
   ValuationReportResponse, Warehouse as WarehouseType, Supplier, Customer
 } from '@inventory/shared-types';
+import { useWarehouse } from '../context/WarehouseContext';
 
 export const ReportsPage: React.FC = () => {
+  const { activeWarehouseId } = useWarehouse();
   const [activeTab, setActiveTab] = useState<'inventory' | 'purchasing' | 'sales' | 'valuation'>('inventory');
 
   // Master lookup data
@@ -25,7 +27,7 @@ export const ReportsPage: React.FC = () => {
   const [valReport, setValReport] = useState<ValuationReportResponse | null>(null);
 
   // Filters
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>('');
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string>(activeWarehouseId);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('');
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [stockStatusFilter, setStockStatusFilter] = useState<string>('ALL');
@@ -84,6 +86,10 @@ export const ReportsPage: React.FC = () => {
   useEffect(() => {
     loadMasterData();
   }, []);
+
+  useEffect(() => {
+    setSelectedWarehouseId(activeWarehouseId);
+  }, [activeWarehouseId]);
 
   useEffect(() => {
     loadCurrentTabReport();

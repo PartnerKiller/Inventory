@@ -36,7 +36,7 @@ async def _fetch_full_item(db: AsyncSession, item_id: str, tenant_id: str) -> Op
     res = await db.execute(stmt)
     return res.scalar_one_or_none()
 
-async def _build_item_response(db: AsyncSession, itm: Item) -> ItemResponse:
+async def _build_item_response(db: AsyncSession, itm: Item, warehouse_id: Optional[str] = None) -> ItemResponse:
     variants_out = []
     item_total_stock = 0.0
     for v in itm.variants:
@@ -46,6 +46,8 @@ async def _build_item_response(db: AsyncSession, itm: Item) -> ItemResponse:
             func.sum(StockBalanceCache.quantity_on_hand),
             func.sum(StockBalanceCache.quantity_allocated)
         ).where(StockBalanceCache.item_variant_id == v.id)
+        if warehouse_id:
+            bal_stmt = bal_stmt.where(StockBalanceCache.warehouse_id == warehouse_id)
         bal_res = await db.execute(bal_stmt)
         q_hand, q_alloc = bal_res.first()
         q_hand = float(q_hand or 0.0)
@@ -300,6 +302,7 @@ async def delete_category(
 async def list_items(
     q: Optional[str] = Query(None, description="Search by SKU, Name, or Barcode"),
     category_id: Optional[str] = Query(None),
+    warehouse_id: Optional[str] = Query(None, description="Scope stock quantities to specific warehouse"),
     is_active: Optional[bool] = Query(None),
     stock_status: Optional[str] = Query(None, description="all, in_stock, low_stock, out_of_stock"),
     sort_by: str = Query("created_at", description="sku, name, created_at"),
@@ -386,7 +389,7 @@ async def list_items(
 
     out = []
     for itm in items:
-        resp = await _build_item_response(db, itm)
+        resp = await _build_item_response(db, itm, warehouse_id=warehouse_id)
         if stock_status == "in_stock" and (resp.total_stock or 0.0) <= 0:
             continue
         if stock_status == "out_of_stock" and (resp.total_stock or 0.0) > 0:

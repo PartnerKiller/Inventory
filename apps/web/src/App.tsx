@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './context/AuthContext';
+import { WarehouseProvider } from './context/WarehouseContext';
 import { Sidebar, NavPage } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
 import { ScannerHUD } from './components/ScannerHUD';
@@ -20,8 +21,6 @@ import { AuditLogPage } from './pages/AuditLogPage';
 import { UsersRolesPage } from './pages/UsersRolesPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { OperationsMonitoringPage } from './pages/OperationsMonitoringPage';
-import { api } from './api/client';
-import { Warehouse } from '@inventory/shared-types';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
 interface ToastMessage {
@@ -30,11 +29,8 @@ interface ToastMessage {
   type: 'success' | 'error' | 'info';
 }
 
-export const App: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+const AuthenticatedApp: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<NavPage>('dashboard');
-  const [activeWarehouse, setActiveWarehouse] = useState<string>('');
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [isDesktopSettingsOpen, setIsDesktopSettingsOpen] = useState<boolean>(false);
   const [isSyncCenterOpen, setIsSyncCenterOpen] = useState<boolean>(false);
@@ -49,20 +45,6 @@ export const App: React.FC = () => {
     }, 3200);
   }, []);
 
-  const loadWarehouses = async () => {
-    if (!isAuthenticated) return;
-    try {
-      const data = await api.getWarehouses();
-      setWarehouses(data);
-    } catch (e) {
-      console.error('Failed to fetch warehouses:', e);
-    }
-  };
-
-  useEffect(() => {
-    loadWarehouses();
-  }, [isAuthenticated]);
-
   // Global Ctrl+K / Cmd+K listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -75,22 +57,10 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)', color: 'var(--text-secondary)' }}>
-        Initializing AuraStock Enterprise Engine...
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
-
   const renderContent = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage onNavigate={setCurrentPage} activeWarehouse={activeWarehouse} />;
+        return <DashboardPage onNavigate={setCurrentPage} />;
       case 'items':
         return <InventoryCatalogPage />;
       case 'ledger':
@@ -114,67 +84,83 @@ export const App: React.FC = () => {
       case 'operations':
         return <OperationsMonitoringPage />;
       default:
-        return <DashboardPage onNavigate={setCurrentPage} activeWarehouse={activeWarehouse} />;
+        return <DashboardPage onNavigate={setCurrentPage} />;
     }
   };
 
   return (
-    <div className="app-container">
-      <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
-      <div className="main-content">
-        <Navbar
-          activeWarehouse={activeWarehouse}
-          onWarehouseChange={setActiveWarehouse}
-          warehouses={warehouses}
-          onRefresh={loadWarehouses}
-          onOpenSearch={() => setIsSearchOpen(true)}
-          onOpenDesktopSettings={() => setIsDesktopSettingsOpen(true)}
-          onOpenSyncCenter={() => setIsSyncCenterOpen(true)}
-          onOpenScannerSettings={() => setIsScannerSettingsOpen(true)}
-        />
-        <main className="page-body">
-          <ScannerHUD />
-          {renderContent()}
-        </main>
-      </div>
-
-      {/* Global Modals rendered at Root with createPortal */}
-      <GlobalSearchModal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-        onNavigate={setCurrentPage}
-      />
-
-      <DesktopSettingsModal
-        isOpen={isDesktopSettingsOpen}
-        onClose={() => setIsDesktopSettingsOpen(false)}
-        onShowToast={showToast}
-      />
-
-      <SyncCenterModal
-        isOpen={isSyncCenterOpen}
-        onClose={() => setIsSyncCenterOpen(false)}
-        onShowToast={showToast}
-      />
-
-      <ScannerSettingsModal
-        isOpen={isScannerSettingsOpen}
-        onClose={() => setIsScannerSettingsOpen(false)}
-      />
-
-      {/* Non-blocking Toast Container */}
-      {toasts.length > 0 && (
-        <div className="toast-container">
-          {toasts.map(t => (
-            <div key={t.id} className={`toast-notification ${t.type}`}>
-              {t.type === 'success' && <CheckCircle2 size={16} color="#34d399" />}
-              {t.type === 'error' && <AlertCircle size={16} color="#f87171" />}
-              {t.type === 'info' && <Info size={16} color="#38bdf8" />}
-              <span>{t.message}</span>
-            </div>
-          ))}
+    <WarehouseProvider>
+      <div className="app-container">
+        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+        <div className="main-content">
+          <Navbar
+            onOpenSearch={() => setIsSearchOpen(true)}
+            onOpenDesktopSettings={() => setIsDesktopSettingsOpen(true)}
+            onOpenSyncCenter={() => setIsSyncCenterOpen(true)}
+            onOpenScannerSettings={() => setIsScannerSettingsOpen(true)}
+          />
+          <main className="page-body">
+            <ScannerHUD />
+            {renderContent()}
+          </main>
         </div>
-      )}
-    </div>
+
+        {/* Global Modals rendered at Root with createPortal */}
+        <GlobalSearchModal
+          isOpen={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+          onNavigate={setCurrentPage}
+        />
+
+        <DesktopSettingsModal
+          isOpen={isDesktopSettingsOpen}
+          onClose={() => setIsDesktopSettingsOpen(false)}
+          onShowToast={showToast}
+        />
+
+        <SyncCenterModal
+          isOpen={isSyncCenterOpen}
+          onClose={() => setIsSyncCenterOpen(false)}
+          onShowToast={showToast}
+        />
+
+        <ScannerSettingsModal
+          isOpen={isScannerSettingsOpen}
+          onClose={() => setIsScannerSettingsOpen(false)}
+        />
+
+        {/* Non-blocking Toast Container */}
+        {toasts.length > 0 && (
+          <div className="toast-container">
+            {toasts.map(t => (
+              <div key={t.id} className={`toast-notification ${t.type}`}>
+                {t.type === 'success' && <CheckCircle2 size={16} color="#34d399" />}
+                {t.type === 'error' && <AlertCircle size={16} color="#f87171" />}
+                {t.type === 'info' && <Info size={16} color="#38bdf8" />}
+                <span>{t.message}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </WarehouseProvider>
   );
+};
+
+export const App: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)', color: 'var(--text-secondary)' }}>
+        Initializing AuraStock Enterprise Engine...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
+
+  return <AuthenticatedApp />;
 };

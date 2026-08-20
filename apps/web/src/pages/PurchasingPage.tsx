@@ -11,8 +11,10 @@ import {
 } from '@inventory/shared-types';
 import { Modal } from '../components/Modal';
 import { DocumentPreviewModal } from '../components/DocumentPreviewModal';
+import { useWarehouse } from '../context/WarehouseContext';
 
 export const PurchasingPage: React.FC = () => {
+  const { activeWarehouseId } = useWarehouse();
   const [activeTab, setActiveTab] = useState<'orders' | 'suppliers'>('orders');
 
   // Purchase Orders State
@@ -23,7 +25,7 @@ export const PurchasingPage: React.FC = () => {
   const [orderPageSize, setOrderPageSize] = useState<number>(15);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [supplierFilter, setSupplierFilter] = useState<string>('');
-  const [warehouseFilter, setWarehouseFilter] = useState<string>('');
+  const [warehouseFilter, setWarehouseFilter] = useState<string>(activeWarehouseId);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Suppliers State
@@ -142,6 +144,11 @@ export const PurchasingPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    setWarehouseFilter(activeWarehouseId);
+    setOrderPage(1);
+  }, [activeWarehouseId]);
+
+  useEffect(() => {
     if (activeTab === 'orders') {
       loadPurchaseOrders();
     } else {
@@ -206,7 +213,7 @@ export const PurchasingPage: React.FC = () => {
   const openCreatePoModal = () => {
     setEditingPo(null);
     setFormSupplierId(suppliers[0]?.id || '');
-    setFormWarehouseId(warehouses[0]?.id || '');
+    setFormWarehouseId(activeWarehouseId || warehouses[0]?.id || '');
     setFormDeliveryDate('');
     setFormNotes('');
     

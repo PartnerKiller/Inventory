@@ -8,8 +8,10 @@ import { api, GetStockBalancesParams, GetLedgerEntriesParams } from '../api/clie
 import { StockLedgerEntry, StockBalanceCache, Warehouse, Item, LocationBin, DocumentType } from '@inventory/shared-types';
 import { Modal } from '../components/Modal';
 import { DocumentPreviewModal } from '../components/DocumentPreviewModal';
+import { useWarehouse } from '../context/WarehouseContext';
 
 export const StockLedgerPage: React.FC = () => {
+  const { activeWarehouseId, warehouses: contextWarehouses } = useWarehouse();
   const [activeTab, setActiveTab] = useState<'balances' | 'journal'>('balances');
 
   // Balances State
@@ -18,7 +20,7 @@ export const StockLedgerPage: React.FC = () => {
   const [totalBalPages, setTotalBalPages] = useState<number>(1);
   const [balPage, setBalPage] = useState<number>(1);
   const [balPageSize, setBalPageSize] = useState<number>(15);
-  const [selectedWarehouseFilter, setSelectedWarehouseFilter] = useState<string>('');
+  const [selectedWarehouseFilter, setSelectedWarehouseFilter] = useState<string>(activeWarehouseId);
   const [selectedBinFilter, setSelectedBinFilter] = useState<string>('');
   const [stockStatusFilter, setStockStatusFilter] = useState<'all' | 'in_stock' | 'out_of_stock'>('in_stock');
   const [balanceSearch, setBalanceSearch] = useState<string>('');
@@ -127,6 +129,13 @@ export const StockLedgerPage: React.FC = () => {
   useEffect(() => {
     loadMasterData();
   }, []);
+
+  useEffect(() => {
+    setSelectedWarehouseFilter(activeWarehouseId);
+    setSelectedBinFilter('');
+    setBalPage(1);
+    setEntryPage(1);
+  }, [activeWarehouseId]);
 
   useEffect(() => {
     if (activeTab === 'balances') {

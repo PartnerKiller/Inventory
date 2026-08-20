@@ -70,6 +70,7 @@ const API_BASE = '/api/v1';
 export interface GetItemsParams {
   q?: string;
   category_id?: string;
+  warehouse_id?: string;
   is_active?: boolean;
   stock_status?: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock';
   sort_by?: 'sku' | 'name' | 'created_at';
@@ -316,6 +317,7 @@ class ApiClient {
     const query = new URLSearchParams();
     if (params.q) query.set('q', params.q);
     if (params.category_id) query.set('category_id', params.category_id);
+    if (params.warehouse_id) query.set('warehouse_id', params.warehouse_id);
     if (params.is_active !== undefined) query.set('is_active', String(params.is_active));
     if (params.stock_status && params.stock_status !== 'all') query.set('stock_status', params.stock_status);
     if (params.sort_by) query.set('sort_by', params.sort_by);

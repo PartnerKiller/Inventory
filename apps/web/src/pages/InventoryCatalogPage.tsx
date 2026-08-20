@@ -8,8 +8,10 @@ import { api, GetItemsParams } from '../api/client';
 import { Item, ItemDetail, ItemCategory, ItemVariant } from '@inventory/shared-types';
 import { Modal } from '../components/Modal';
 import { nativeBridge } from '@inventory/native-bridge';
+import { useWarehouse } from '../context/WarehouseContext';
 
 export const InventoryCatalogPage: React.FC = () => {
+  const { activeWarehouseId, activeWarehouse } = useWarehouse();
   // Main Data States
   const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<ItemCategory[]>([]);
@@ -83,6 +85,7 @@ export const InventoryCatalogPage: React.FC = () => {
       const params: GetItemsParams = {
         q: searchTerm.trim() || undefined,
         category_id: selectedCategory || undefined,
+        warehouse_id: activeWarehouseId || undefined,
         is_active: activeFilter === 'active' ? true : activeFilter === 'inactive' ? false : undefined,
         stock_status: stockStatus,
         sort_by: sortBy,
@@ -108,7 +111,7 @@ export const InventoryCatalogPage: React.FC = () => {
 
   useEffect(() => {
     loadItems();
-  }, [page, pageSize, selectedCategory, stockStatus, activeFilter, sortBy, sortDir]);
+  }, [page, pageSize, selectedCategory, stockStatus, activeFilter, sortBy, sortDir, activeWarehouseId]);
 
   // Keyboard shortcut listener (/ to focus search)
   useEffect(() => {
