@@ -1,0 +1,60 @@
+name: Tauri Windows CI / Desktop Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+      - release/*
+  workflow_dispatch:
+
+jobs:
+  build-tauri-windows:
+    name: Build Windows Desktop Executable & Installers
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Set up Rust & Cargo
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './apps/desktop-tauri/src-tauri -> target'
+
+      - name: Install Monorepo Dependencies
+        run: npm ci
+
+      - name: Build Web Frontend Assets
+        run: npm --prefix apps/web run build
+
+      - name: Build Tauri Windows Executable and Installers
+        run: |
+          cd apps/desktop-tauri
+          npx @tauri-apps/cli build --bundles msi,nsis
+
+      - name: Stage Release Artifacts
+        shell: bash
+        run: |
+          mkdir -p release/windows
+          cp -r apps/desktop-tauri/src-tauri/target/release/bundle/msi/* release/windows/ 2>/dev/null || true
+          cp -r apps/desktop-tauri/src-tauri/target/release/bundle/nsis/* release/windows/ 2>/dev/null || true
+          cp apps/desktop-tauri/src-tauri/target/release/aurastock.exe release/windows/ 2>/dev/null || true
+
+      - name: Upload Windows Desktop Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurastock-windows-desktop
+          path: release/windows/
+          if-no-files-found: warn

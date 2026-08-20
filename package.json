@@ -1,0 +1,28 @@
+{
+  "name": "inventory-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-Grade Multi-Warehouse Inventory Management System",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --prefix apps/web run dev",
+    "build:web": "npm --prefix apps/web run build",
+    "dev:backend": "python -m uvicorn app.main:app --app-dir apps/backend --reload --port 8000",
+    "test:backend": "python -m pytest apps/backend/tests",
+    "test:web": "npm --prefix apps/web run test"
+  },
+  "keywords": [
+    "inventory",
+    "fastapi",
+    "react",
+    "tauri",
+    "postgresql",
+    "stock-ledger",
+    "warehouse-management"
+  ],
+  "author": "Antigravity Engineering",
+  "license": "MIT"
+}

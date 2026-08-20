@@ -1,0 +1,11 @@
+{
+  "project": "AuraStock Enterprise Inventory",
+  "version": "1.1.0",
+  "release_timestamp": "2026-08-20T10:08:36.550291+00:00",
+  "components": {
+    "web": "Vite React Production SPA v1.1.0",
+    "backend": "FastAPI Multi-Worker Python 3.12 v1.1.0",
+    "docker": "Docker Compose Stack with PostgreSQL 16 & Redis 7",
+    "windows": "AuraStock Windows x64 Native Desktop Client v1.1.0 (AuraStock_1.1.0_x64-setup.exe / AuraStock_1.1.0_x64_en-US.msi)"
+  }
+}
